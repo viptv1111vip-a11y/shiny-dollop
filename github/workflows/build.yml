@@ -1,0 +1,50 @@
+name: KGZ Mobile Auto-Build APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 1. Клонирование репозитория
+      uses: actions/checkout@v4
+
+    - name: 2. Распаковка архива проекта
+      run: |
+        unzip -o project.zip
+        ls -la
+
+    - name: 3. Настройка среды Java (JDK 17)
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: 4. Настройка Android SDK, NDK и CMake
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: 34
+        build-tools: 34.0.0
+        ndk: 25.1.8937393
+        cmake: 3.22.1
+
+    - name: 5. Сборка игрового лаунчера (APK)
+      run: |
+        if [ -d "android" ]; then
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+        else
+          echo "Ошибка: Папка android не найдена внутри ZIP!"
+          exit 1
+        fi
+
+    - name: 6. Выгрузка готового APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: kgz-mobile-launcher-debug
+        path: android/app/build/outputs/apk/debug/app-debug.apk
